@@ -24,62 +24,14 @@ const Motion = {
 };
 
 const State = {
-    Locked: {
-        name: 'Locked',
-        motion: Motion.None,
-    },
-    GoingDown: {
-        name: 'GoingDown',
-        motion: Motion.Down,
-        timer: {
-            time: T.MOTION,
-            target: 'Locked',
-        },
-    },
-    Stopped: {
-        name: 'Stopped',
-        motion: Motion.None,
-        timer: {
-            time: T.AUTO_CLOSE,
-            target: 'GoingDown',
-        },
-    },
-    GoingUp: {
-        name: 'GoingUp',
-        motion: Motion.Up,
-        timer: {
-            time: T.MOTION,
-            target: 'Up',
-        },
-    },
-    Up: {
-        name: 'Up',
-        motion: Motion.Up,
-        timer: {
-            time: T.AUTO_CLOSE,
-            target: 'WarnDown',
-        },
-    },
-    UpPermInit: {
-        name: 'UpPermInit',
-        motion: Motion.None,
-        timer: {
-            time: T.PERM_FLASH,
-            target: 'UpPerm',
-        },
-    },
-    UpPerm: {
-        name: 'UpPerm',
-        motion: Motion.Up,
-    },
-    WarnDown: {
-        name: 'WarnDown',
-        motion: Motion.None,
-        timer: {
-            time: T.CLOSE_WARNING,
-            target: 'GoingDown',
-        },
-    },
+    Locked:     { name: 'Locked',     motion: Motion.None                                                        },
+    GoingDown:  { name: 'GoingDown',  motion: Motion.Down, timer: { time: T.MOTION,        target: 'Locked'    } },
+    Stopped:    { name: 'Stopped',    motion: Motion.None, timer: { time: T.AUTO_CLOSE,    target: 'GoingDown' } },
+    GoingUp:    { name: 'GoingUp',    motion: Motion.Up,   timer: { time: T.MOTION,        target: 'Up'        } },
+    Up:         { name: 'Up',         motion: Motion.Up,   timer: { time: T.AUTO_CLOSE,    target: 'WarnDown'  } },
+    UpPermInit: { name: 'UpPermInit', motion: Motion.None, timer: { time: T.PERM_FLASH,    target: 'UpPerm'    } },
+    UpPerm:     { name: 'UpPerm',     motion: Motion.Up,                                                         },
+    WarnDown:   { name: 'WarnDown',   motion: Motion.None, timer: { time: T.CLOSE_WARNING, target: 'GoingDown' } },
 };
 
 const Event = {
@@ -116,7 +68,7 @@ let set_motion = function (motion) {
     if (current_motion == motion) {
         return;
     }
-    
+
     // if we're currently moving up / down, stop
     if (current_motion == Motion.Up) {
         set_output(UP, false);
@@ -132,26 +84,20 @@ let set_motion = function (motion) {
     } else if (motion == Motion.Down) {
         set_output(DOWN, true);
     }
-    
+
     current_motion = motion;
 }
 
 // Sets a new state and updates the outputs accordingly
 let set_state = function (state) {
     print("State: " + state.name);
-    
+
     if ('timer' in current_state) {
         Timer.clear(state_change_timer);
     }
-    if ('exit' in current_state) {
-        current_state.exit();
-    }
     current_state = state;
-    if ('enter' in current_state) {
-        current_state.enter();
-    }
     if ('timer' in current_state) {
-        state_change_timer = Timer.set(current_state.timer.time, false, function() { set_state(State[current_state.timer.target]) });
+        state_change_timer = Timer.set(current_state.timer.time, false, function () { set_state(State[current_state.timer.target]) });
     }
     set_motion(state.motion)
 }
@@ -161,7 +107,7 @@ let update = function (event) {
         if (event === Event.UpPressed) {
             if (locked_num_up_pressed == 0) {
                 locked_num_up_pressed += 1;
-                Timer.set(T.UNLOCK, false, function() { locked_num_up_pressed = 0; });
+                Timer.set(T.UNLOCK, false, function () { locked_num_up_pressed = 0; });
             } else {
                 locked_num_up_pressed = 0;
                 set_state(State.GoingUp);
@@ -184,8 +130,8 @@ let update = function (event) {
     } else if (current_state === State.Up) {
         if (event === Event.UpPressed) {
             // set timer to detect long press
-            hold_perm_timer = Timer.set(T.HOLD_PERM, false, function() { 
-                if (current_state === State.Up) { set_state(State.UpPermInit); } 
+            hold_perm_timer = Timer.set(T.HOLD_PERM, false, function () {
+                if (current_state === State.Up) { set_state(State.UpPermInit); }
             });
             // reset timer by entering the Up state again
             set_state(State.Up);
@@ -220,10 +166,10 @@ let disable_ap = function () {
 
 let setup = function () {
     print("Setup");
-    
+
     // set initial state
     set_state(INIT_STATE);
-    
+
     // setup auto-disabling of AP
     Shelly.call(
         "Wifi.SetConfig",
